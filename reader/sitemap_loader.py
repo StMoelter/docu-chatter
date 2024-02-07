@@ -1,7 +1,9 @@
 from langchain.document_loaders.sitemap import SitemapLoader
-import nest_asyncio
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.embeddings import OllamaEmbeddings
+from langchain.vectorstores import Weaviate
+import re, os, pickle, nest_asyncio
 import pdb
-import re
 
 nest_asyncio.apply()
 
@@ -15,8 +17,16 @@ header_template = {
     "Upgrade-Insecure-Requests": "1",
 }
 
-sitemap_uri = "https://stability.ai/sitemap.xml"
-cache_file = "~/workspace/vendor/docu-chatter/tmp/stability.ai"
+# https://rubyonrails.org/sitemap.xml
+"""
+sitemap_uri = "https://documentation.scip.sumcumo.net/sitemap.xml"
+cache_file = "/Users/steffenmoelter/workspace/vendor/docu-chatter/tmp/scip-docu.pickle"
+
+"""
+
+
+sitemap_uri = "https://rubyonrails.org/sitemap.xml"
+cache_file = "/Users/steffenmoelter/workspace/vendor/docu-chatter/tmp/ror.pickle"
 
 
 def fetch_data():
@@ -25,21 +35,32 @@ def fetch_data():
         raw_documents = pickle.load(filehandler)
     else:
         sitemap_loader = SitemapLoader(
-            web_path=sitemap_uri, header_template=header_template
+            web_path=sitemap_uri, 
+            header_template=header_template,
+            continue_on_failure=True,
         )
         sitemap_loader.requests_per_second = 4
         raw_documents = sitemap_loader.load()
-        file = open(pickle_file, "wb")
+        file = open(cache_file, "wb")
         pickle.dump(raw_documents, file)
         sitemap_loader = SitemapLoader(
             web_path=sitemap_uri, header_template=header_template
         )
 
     print(f"loaded {len(raw_documents)} documents")
+    for doc in raw_documents:
+        doc.page_content = re.sub(r"\s+", ' ', doc.page_content)
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=500, chunk_overlap=50, separators=["\n\n", "\n", " ", ""]
+        chunk_size=1000, chunk_overlap=100
     )
-    pdb.set_trace()
+
+    documents = text_splitter.split_documents(raw_documents)
+    embeddings = OllamaEmbeddings(model='wizard-vicuna-uncensored')
+
+    print(f"Going to add {len(documents)} to Weaviate")
+    Weaviate.from_documents(documents, embeddings, weaviate_url="http://127.0.0.1:8080")
+    print("****Loading to vectorestore done ***")
+
 
 
 if __name__ == "__main__":
