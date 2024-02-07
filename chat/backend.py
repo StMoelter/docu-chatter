@@ -2,32 +2,34 @@ import os
 import weaviate
 from typing import Any, Dict, List
 
-from langchain.embeddings import OllamaEmbeddings
-from langchain.chat_models import ChatOllama
+from langchain.embeddings import AzureOpenAIEmbeddings
+from langchain.chat_models import AzureChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.vectorstores import Weaviate
 from langchain.callbacks.stdout import StdOutCallbackHandler
 
 
-INDEX_NAME = "stable-diffusion-index"
-
-
 def run_llm(query: str, chat_history: List[Dict[str, Any]] = []):
-    embeddings = OllamaEmbeddings()
-    client = weaviate.Client(url="http://127.0.0.1:8080")
+    embeddings = AzureOpenAIEmbeddings(
+        azure_endpoint=os.environ["AZURE_ENDPOINT"],
+        openai_api_key=os.environ["AZURE_KEY"],
+        azure_deployment=os.environ["AZURE_EMBEDDING_DEPLOYMENT"],
+        openai_api_version=os.environ["AZURE_VERSION"],
+    )
+    client = weaviate.Client(url="http://127.0.0.1:8081")
     vectorstore = Weaviate(
         client=client, 
-        index_name='LangChain_74e822ae0ec24fdc998972af272bdbdd', 
+        index_name=os.environ["WEAVIATE_INDEX"], 
         text_key='text', 
         embedding=embeddings,
         by_text=False
         )
    
-    chat = ChatOllama(
-        model="wizard-vicuna-uncensored",
-        verbose=True,
-        temperature=0,
-        language="en",
+    chat = AzureChatOpenAI(
+        azure_endpoint=os.environ["AZURE_ENDPOINT"],
+        openai_api_key=os.environ["AZURE_KEY"],
+        azure_deployment=os.environ["AZURE_LLM_DEPLOYMENT"],
+        openai_api_version=os.environ["AZURE_VERSION"],
     )
 
     qa = ConversationalRetrievalChain.from_llm(

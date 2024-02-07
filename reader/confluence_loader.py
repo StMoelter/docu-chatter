@@ -34,7 +34,10 @@ def fetch_data():
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
 
     documents = text_splitter.split_documents(raw_documents)
-    pdb.set_trace()
+    # pdb.set_trace()
+    for doc in documents:
+        doc.metadata['confluence_id']= doc.metadata.pop('id')
+
     embeddings = AzureOpenAIEmbeddings(
         azure_endpoint=os.environ["AZURE_ENDPOINT"],
         openai_api_key=os.environ["AZURE_KEY"],
