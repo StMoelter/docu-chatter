@@ -9,7 +9,7 @@ import pdb
 
 nest_asyncio.apply()
 
-cache_file = "/Users/steffenmoelter/workspace/vendor/docu-chatter/tmp/confluence.pickle"
+cache_file = "../tmp/confluence.pickle"
 confluence_key = "GIGD"
 
 

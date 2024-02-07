@@ -11,7 +11,7 @@ with gr.Blocks() as demo:
 
     def respond(message, chat_history):
         bot_message = run_llm(message, chat_history)
-        chat_history.append((message, bot_message['answer']))
+        chat_history.append(tuple((message, bot_message['answer']))) # Be sure to have a tuple, otherwise we get a list and an exception
         return "", chat_history
     
     btn.click(respond, inputs=[msg, chatbot], outputs=[msg, chatbot])

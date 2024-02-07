@@ -8,6 +8,14 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain.vectorstores import Weaviate
 from langchain.callbacks.stdout import StdOutCallbackHandler
 
+def get_chat_history(chat_history):
+    buffer = ""
+    for dialogue_turn in chat_history:
+      human = "Human: " + dialogue_turn[0]
+      ai = "Assistant: " + dialogue_turn[1]
+      buffer += "\n" + "\n".join([human, ai])
+    return buffer
+
 
 def run_llm(query: str, chat_history: List[Dict[str, Any]] = []):
     embeddings = AzureOpenAIEmbeddings(
@@ -35,6 +43,8 @@ def run_llm(query: str, chat_history: List[Dict[str, Any]] = []):
     qa = ConversationalRetrievalChain.from_llm(
         llm=chat, retriever=vectorstore.as_retriever(),
         return_source_documents=True,
-        callbacks=[StdOutCallbackHandler()]
+        callbacks=[StdOutCallbackHandler()],
+        get_chat_history=get_chat_history
     )
+    # import pdb; pdb.set_trace()
     return qa({"question": query, "chat_history": chat_history})
