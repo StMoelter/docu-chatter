@@ -3,7 +3,13 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import OllamaEmbeddings
 from langchain.vectorstores import Weaviate
 import re, os, pickle, nest_asyncio
+
+from langchain.embeddings import OpenAIEmbeddings
+
 import pdb
+
+from dotenv import load_dotenv
+load_dotenv(f"{os.path.dirname(__file__)}/../.env")
 
 nest_asyncio.apply()
 
@@ -26,7 +32,7 @@ cache_file = "/Users/steffenmoelter/workspace/vendor/docu-chatter/tmp/scip-docu.
 
 
 sitemap_uri = "https://rubyonrails.org/sitemap.xml"
-cache_file = "/Users/steffenmoelter/workspace/vendor/docu-chatter/tmp/ror.pickle"
+cache_file = "/Users/steffen/workspace/vendor/docu-chatter/tmp/ror.pickle"
 
 
 def fetch_data():
@@ -39,13 +45,10 @@ def fetch_data():
             header_template=header_template,
             continue_on_failure=True,
         )
-        sitemap_loader.requests_per_second = 4
+        sitemap_loader.requests_per_second = 2
         raw_documents = sitemap_loader.load()
         file = open(cache_file, "wb")
         pickle.dump(raw_documents, file)
-        sitemap_loader = SitemapLoader(
-            web_path=sitemap_uri, header_template=header_template
-        )
 
     print(f"loaded {len(raw_documents)} documents")
     for doc in raw_documents:
@@ -55,10 +58,13 @@ def fetch_data():
     )
 
     documents = text_splitter.split_documents(raw_documents)
-    embeddings = OllamaEmbeddings(model='wizard-vicuna-uncensored')
+    pdb.set_trace()
+
+    # embeddings = OllamaEmbeddings(model='wizard-vicuna-uncensored')
+    embeddings = OpenAIEmbeddings(allowed_special='all', disallowed_special=())
 
     print(f"Going to add {len(documents)} to Weaviate")
-    Weaviate.from_documents(documents, embeddings, weaviate_url="http://127.0.0.1:8080")
+    # Weaviate.from_documents(documents, embeddings, weaviate_url="http://127.0.0.1:8081")
     print("****Loading to vectorestore done ***")
 
 

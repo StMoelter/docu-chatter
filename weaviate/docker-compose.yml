@@ -6,7 +6,7 @@ services:
     - --host
     - 0.0.0.0
     - --port
-    - '8080'
+    - '8081'
     - --scheme
     - http
     image: semitechnologies/weaviate:1.22.4
