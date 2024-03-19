@@ -23,11 +23,18 @@ class Index(Resource):
 
 
 chat_ns = api.namespace("chat", description="Chat operations")
+status_model = api.model("Status", {
+    "chat_memory": fields.List(fields.Nested(api.model("Memory", {
+            "HumanMessage": fields.String(required=False),
+            "AIMessage":fields.String(required=False)
+        }))),
+    "moving_summary_buffer": fields.String(required=False, description="Chat summarization, if needed"),
+})
 chat_input_model = api.model(
     "ChatInput",
     {
         "question": fields.String(required=True, description="The chat question"),
-        "status":   fields.String(required=False, description="The chat status")  
+        "status": fields.Nested(status_model),
     },
 )
 
@@ -35,7 +42,7 @@ chat_output_model = api.model(
     "ChatOutput",
     {
         "answer": fields.String(required=True, description="The chat answer"),
-        "status": fields.String(required=True, description="The chat status"),    
+        "status": fields.Nested(status_model),
     },
 )
 
@@ -46,9 +53,9 @@ class Chat(Resource):
     @api.response(200, "Success", chat_output_model)
     def post(self):
         answer, status = run_llm(
-            api.payload["question"], 
+            api.payload["question"],
             api.payload["status"] if "status" in api.payload else None,
-            )
+        )
         return {"answer": answer, "status": status}
 
 
