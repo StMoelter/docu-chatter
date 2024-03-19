@@ -27,9 +27,7 @@ chat_input_model = api.model(
     "ChatInput",
     {
         "question": fields.String(required=True, description="The chat question"),
-        "history": fields.List(
-            fields.String, required=False, description="The chat history"
-        ),
+        "status":   fields.String(required=False, description="The chat status")  
     },
 )
 
@@ -37,9 +35,7 @@ chat_output_model = api.model(
     "ChatOutput",
     {
         "answer": fields.String(required=True, description="The chat answer"),
-        "history": fields.List(
-            fields.String, required=False, description="The chat history"
-        ),
+        "status": fields.String(required=True, description="The chat status"),    
     },
 )
 
@@ -49,8 +45,11 @@ class Chat(Resource):
     @chat_ns.expect(chat_input_model)
     @api.response(200, "Success", chat_output_model)
     def post(self):
-        answer, history = run_llm(api.payload["question"], api.payload["history"])
-        return {"answer": answer, "history": history}
+        answer, status = run_llm(
+            api.payload["question"], 
+            api.payload["status"] if "status" in api.payload else None,
+            )
+        return {"answer": answer, "status": status}
 
 
 if __name__ == "__main__":
